@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ################################################################################
 # Species distribution modelling with biomod
 #
@@ -32,35 +31,50 @@
 #
 ################################################################################
 
+library(viridis) # Color ramp
 library(terra)
+
 #### Section 1 : données environnementales ####
 # Pensez à vérifier que les systèmes de coordonnées de vos variables 
 # environnementales sont les mêmes, sinon il faut les reprojeter avant
 # (fonctions project(), resample())
 
-# 1. Données baseline (worldclim 1950-2000)
+#---- 1. Données baseline (worldclim 1950-2000) ----
 # 1.1 Données climatiques worldclim
 climate_vars <- paste0("bio_", 1:19)
 env_data <- rast(paste0("data_cours/wc2.1_10m_bio/wc2.1_10m_", climate_vars, 
                         ".tif"))
+
 # Pour avoir les mêmes noms de variables que les fichiers futurs:
 names(env_data) <- paste0("bio", 1:19) 
 
+plot(env_data) # Emprise sur le monde entier, par forcément la plus pertinente pour notre espèce
 
-# Réduction à une partie de l'ouest-paléarctique
+# On réduit l'emprise à une partie de l'ouest-paléarctique
 e <- ext(-15, 50, 40, 70)
 env_data <- crop(env_data, e)
 
+
+# Pour tester l'emprise, on peut le dessiner avec la fonction draw :
+plot(env_data[[1]])
+draw()
+
 # 1.2 Ajout données land use
 forests <- rast("data_cours/land use/baseline_landuse.tif")
+
 # Les forêts sont éclatées en plusieurs types de forêts, on les rassemble toutes
 # sous une seule variable en faisant la somme 
-forests <- sum(forests)
+forests <- sum(forests) 
 names(forests) <- "forests"
+
+# Réduction de l'emprise
 forests <- crop(forests, e)
 
+# Vérification des résolutions spatiales
 res(env_data)
 res(forests)
+
+# Les résolutions sont différentes. Stratégie de ré-échantillonnage à définir : 
 
 # Rééchantillonnage : aggregate > resample
 # Aggregate possible que si le changement de résolution est un multiple de 2
@@ -96,6 +110,9 @@ res(forests)
 # Si vous travaillez avec des données climatiques de sources variables, 
 # il peut être utile de travailler hors de R afin de gérer des formats 
 # difficiles à gérer sous R (e.g. données CMIP6), avec python (e.g. outil CDO)
+
+# /!\ Attention : Il ne faut JAMAIS sous-échantillonner car sinon on réplique artificiellement l'information.
+
 forests_0.167 <- resample(forests, 
                           env_data)
 
@@ -103,21 +120,34 @@ forests_0.167 <- resample(forests,
 env_data <- c(env_data,
               forests_0.167)
 
+# Visualisation
+x11() # pour ouvrir une nouvelle fenêtre (uniquement avec Windows)
+plot(forests)
+x11()
+plot(forests_0.167)
+
 # Synchronisation des NAs : explication
 val <- values(env_data)
-which(is.na(val[, "bio1"]) & !is.na(val[, "forests"]))
+length(which(is.na(val[, "bio1"]) & !is.na(val[, "forests"])))
 length(which(is.na(val[, "forests"]) & !is.na(val[, "bio1"])))
+# On a des NAs pour différents pixels dans bio et forests 
+
 dummy.raster <- env_data[[1]]
 dummy.raster[] <- NA
+
+# Visualisation : 
 # Données manquantes pour les variables climatiques = 1
 dummy.raster[which(is.na(val[, "bio1"]) & !is.na(val[, "forests"]))] <- 1
+
 # Données manquantes pour les forêts = 2
 dummy.raster[which(is.na(val[, "forests"]) & !is.na(val[, "bio1"]))] <- 2
+
 # Nommer les variables catégorielles dans le raster pour faire la carte
 levels(dummy.raster) <- data.frame(id = 1:2, label = c("NA climatique", 
                                                        "NA forets"))
 plot(dummy.raster, 
      col = c("red", "blue"))
+
 # (Essayez avec plet() pour une version interactive)
 
 # Synchronisation des NAs
@@ -135,15 +165,15 @@ plot(dummy.raster,
 # également NA.
 # Par conséquent, cet emplacement sera masqué (défini comme NA) dans le raster 
 # de sortie.
+
 env_data <- mask(env_data, 
                  app(env_data, fun = sum))
-
 
 # Ecriture des données
 writeRaster(env_data, "data/baseline.tif", overwrite = T) # Overwrite?
 rm(list = ls())
 
-# 2. Données futures
+#---- 2. Données futures ----
 # La difficulté ici est d'associer les variables ensemble par scénario,
 # par GCM et par horizon de projection. Les noms diffèrent souvent entre 
 # sources, donc il faut regarder
@@ -155,9 +185,11 @@ rm(list = ls())
 
 #   -- fichiers climatiques
 # GCMs
-gcms_clim <- c("IPSL-CM6A-LR", "MIROC6")
+gcms_clim <- c("IPSL-CM6A-LR", "MIROC6") # GCMs = global climate models
+
 # Scénarios
-scenarios_clim<- c("ssp245", "ssp585")
+scenarios_clim<- c("ssp245", "ssp585") # ssp = shared socioeconomic pathways, les scenarios se lisent : ssp 2 4 5, rcp 4.5 ssp = prise en compte des changement géopolitiques, rcp = prise en compte des émissions de gazs à effet de serre.
+
 # Horizons de projection
 years_clim <- c("2061-2080")
 
@@ -185,11 +217,12 @@ for (scenar in 1:length(scenarios_clim)) {
     }
   }
 }
+
 # Vous pouvez aussi préparer ce tableau hors de R, dans excel par exemple,
 # si c'est plus simple pour vous.
 saveRDS(proj_names, "data/projection_names.RDS")
 
-
+# On charge les données de baseline
 baseline <- rast("data/baseline.tif")
 
 # Important : les noms de variables doivent être identiques entre baseline et 
@@ -198,7 +231,8 @@ for(i in 1:nrow(proj_names)) {
   # Nom des couches climatiques
   proj_clim <- paste(proj_names[i, c("gcm_clim", "scenar_clim", "year_clim")],
                      collapse = "_")
-  # Nom des couches land use
+ 
+   # Nom des couches land use
   proj_lu <- paste(proj_names[i, c("scenar_lu", "year_lu", "gcm_lu")],
                    collapse = "_")
   
@@ -207,24 +241,25 @@ for(i in 1:nrow(proj_names)) {
   final_name <- paste(proj_names[i, c("gcm_lu", "scenar_clim", "year_lu")], 
                       collapse = "_")
   
-  cat(final_name, "\n")
+  cat(final_name, "\n") # imprime le final_name
   
   # Données climatiques
   future_data <- rast(paste0("data_cours/wc2.1_10m_bioc_", 
                              proj_clim,
                              ".tif"))
   names(future_data) <- paste0("bio", 1:19)
-  future_data <- crop(future_data, baseline)
   
+  # Réduction de l'emprise pour qu'elle corresponde à celle de la baseline
+  future_data <- crop(future_data, baseline)
   
   # Données land use
   forests <- rast(paste0("data_cours/land use/LU_", proj_lu, ".tif"))
-  forests <- sum(forests)
-  names(forests) <- "forests"
-  forests <- crop(forests, baseline)
+  forests <- sum(forests) # somme des différents types de forêts
+  names(forests) <- "forests" # renommage
+  forests <- crop(forests, baseline) # réduction de l'emprise
 
   forests_0.167 <- resample(forests, 
-                            baseline)
+                            baseline) # rééchantillonnage : utiliser la même méthode partout
   
   future_data <- c(future_data,
                    forests_0.167)
