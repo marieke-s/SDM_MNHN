@@ -448,8 +448,6 @@ res(forests) # 0.08333333 0.08333333
 
 # Les résolutions sont différentes 
 
-
-
 # Rééchantillonnage : aggregate > resample
 # Aggregate possible que si le changement de résolution est un multiple de 2 (ie les grilles sont calées) 
 # Sinon resample (si les grilles sont décalées)
@@ -551,10 +549,14 @@ env_data <- mask(env_data,
 writeRaster(env_data, "data/baseline.tif", overwrite = T) # overwrite = T pour écraser le fichier existant
 rm(list = ls())
 
+
+
+
+
 # 2. Données futures
 # La difficulté ici est d'associer les variables ensemble par scénario,
 # par GCM et par horizon de projection. Les noms diffèrent souvent entre 
-# sources, donc il faut regarder
+# sources, donc il faut regarder # GCM = global circulation model (Jerome expert de ces modèles)
 # comment les variables sont nommées sur le disque, et préparer le code pour 
 # les lire et les associer dans le bon ordre.
 # On va donc commencer par préparer un tableau qui contient les noms des 
@@ -563,9 +565,11 @@ rm(list = ls())
 
 #   -- fichiers climatiques
 # GCMs
-gcms_clim <- c("IPSL-CM6A-LR", "MIROC6")
+gcms_clim <- c("IPSL-CM6A-LR", "MIROC6") # Toujours prendre plusieurs modèles
+
 # Scénarios
-scenarios_clim<- c("ssp245", "ssp585")
+scenarios_clim<- c("ssp245", "ssp585") # scénarios climatiques (ssp : socio-economic pathways - scenarios du dernier rapport des experts climatiques - prend en compte les changements géopolitiques globaux), se lit ssp 2 rcp 4.5 (scenario d'emission de gazs à effet de serre).
+
 # Horizons de projection
 years_clim <- c("2061-2080")
 
@@ -573,8 +577,10 @@ years_clim <- c("2061-2080")
 # Notez que l'ordre correspond **exactement** à la section climatique
 # GCMs
 gcms_lu <- c("ipsl", "miroc") 
+
 # Scénarios
 scenarios_lu <- c("rcp45", "rcp85") 
+
 # Horizons de projection
 years_lu <- "2070"
 
@@ -593,11 +599,11 @@ for (scenar in 1:length(scenarios_clim)) {
     }
   }
 }
-# Vous pouvez aussi préparer ce tableau hors de R, dans excel par exemple,
-# si c'est plus simple pour vous.
-saveRDS(proj_names, "data/projection_names.RDS")
 
+# Vous pouvez aussi préparer ce tableau hors de R, dans excel par exemple, si c'est plus simple pour vous.
+saveRDS(proj_names, "data/projection_names.RDS") # RDS 100 x plus compressé que CSV, ne fonctionne pas pour les raster terra (qui ne sont pas chargés dans la mémoire)
 
+# On charge les données de base
 baseline <- rast("data/baseline.tif")
 
 # Important : les noms de variables doivent être identiques entre baseline et 
@@ -690,10 +696,8 @@ for (sp in sp_list$sp) {
   sp_occurrence <- read.table(paste0("data_cours/", sp, ".csv"), 
                               sep = ";", h = T)
   
-  # Pensez à vérifier que les systèmes de coordonnées de vos occurrences
-  # correspondent à vos variables environnementales
-  # Sinon il faut projeter occurrences ou variables pour assurer la 
-  # compatibilité
+  # Pensez à vérifier que les systèmes de coordonnées de vos occurrences correspondent à vos variables environnementales
+  # Sinon il faut projeter occurrences ou variables pour assurer la compatibilité
   
   plot(baseline[[1]])
   points(sp_occurrence[, c("x", "y")], cex = .5, 
