@@ -227,6 +227,7 @@ baseline <- rast("data/baseline.tif")
 
 # Important : les noms de variables doivent être identiques entre baseline et 
 # futur, on en aura besoin pour projeter les modèles avec biomod
+
 for(i in 1:nrow(proj_names)) {
   # Nom des couches climatiques
   proj_clim <- paste(proj_names[i, c("gcm_clim", "scenar_clim", "year_clim")],
