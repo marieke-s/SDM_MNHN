@@ -1,4 +1,6 @@
-
+# Load libraries
+library(biomod2)
+library(ggplot2)
 ################################################################################
 # Species distribution modelling with biomod
 #
@@ -38,9 +40,6 @@
 
 # To extract info from multiD array:
 # d["sp1",,,"cv1 "] --> for species 1, for all background runs, for 1rst CV run.
-
-# Load libraries
-library(biomod2)
 
 # Load species list
 sp_list <- read.csv("data_cours/species_list.csv", sep = ";")
@@ -259,6 +258,10 @@ for (i in 1:nrow(sp_list)) {
   }
 }
 
+# Plot
+plot(jaccard_test$jaccard ~jaccard_test$cutoff) # for sp = "Ned.starkii"
+plot(jaccard_test)
+
 # On sauvegarde les cutoffs pour les réutiliser dans le modèle d'ensemble si besoin
 saveRDS(allsp_cutoffs, file = "./data/jaccard_cutoffs.RDS")
 
@@ -266,12 +269,17 @@ saveRDS(allsp_cutoffs, file = "./data/jaccard_cutoffs.RDS")
 saveRDS(allsp_jaccard, file = "./data/jaccard_evals.RDS")
 saveRDS(jaccard_list, file = "./data/jaccard_tests.RDS")
 
-##### Partie 2 : Graphiques #####
-allsp_jaccard <- readRDS("./data/jaccard_evals.RDS")
-library(ggplot2)
+# Clean environment
+rm(list = ls())
 
+##### Partie 2 : Graphiques #####
+# Load data
+allsp_jaccard <- readRDS("./data/jaccard_evals.RDS")
+
+# Melt data
 ggjaccard <- reshape2::melt(allsp_jaccard)
 
+# Plot
 ggplot(ggjaccard, aes(x = model, y = value, col = pa.run, shape = cv.run)) +
   geom_point() + facet_wrap (~ species)
 
