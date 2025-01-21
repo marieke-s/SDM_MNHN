@@ -6,4 +6,7 @@
 .Rproj
 data/
 data_cours/
+models/
+ouputs/
+graphiques/
 
