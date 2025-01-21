@@ -32,7 +32,7 @@ library(ggplot2)
 # distribution. Any modifications of this code base MUST be distributed with the
 # same license, GPLv3.
 #
-################################################################################
+##### Partie 1 : Calcul de Jaccard #####
 # Using multi-dimension arrays for md eval :
 # Array 2D : md vs sp for a given run of background
 # Array 3D : md vs sp for all runs of background for a given CV run
@@ -168,8 +168,7 @@ for (i in 1:nrow(sp_list)) {
       
       # /!\ Transformation pseudo-absences en absences (pas bien !)
       # On ne peut PAS calculer l'indice de Jaccard sur les présences seules 
-      # Ici on a des présences et des abscences (0)
-      # Mais si on voulait tester cet indice avec un jeu de donnée en presence seule (ie presence + background = NA) (pas bien !), il faudrait remplacer les background (NA) en abscence (0):
+      # Ici voudrait tester cet indice pour les sp en presence seule (ie presence + background = NA) (pas bien !), il faut donc remplacer les backgrounds (NA) en abscences (0):
       obs_data[is.na(obs_data)] <- 0 
       
       # Etape 2 : préparer les prédictions des modèles à évaluer
@@ -271,12 +270,14 @@ saveRDS(jaccard_list, file = "./data/jaccard_tests.RDS")
 
 # Clean environment
 rm(list = ls())
+graphics.off()
+
 
 ##### Partie 2 : Graphiques #####
 # Load data
 allsp_jaccard <- readRDS("./data/jaccard_evals.RDS")
 
-# Melt data
+# Melt array into 2D
 ggjaccard <- reshape2::melt(allsp_jaccard)
 
 # Plot
@@ -284,4 +285,8 @@ ggplot(ggjaccard, aes(x = model, y = value, col = pa.run, shape = cv.run)) +
   geom_point() + facet_wrap (~ species)
 
 
+# Interpretation des indices de Jaccard 
+# Les spp. du bas sont en présences seules donc théoriquement on ne devrait pas utiliser Jaccard.
+# Interpretation simple : Ex : Jaccard = 0.5 = 50% de revauchement entre les observés et les prédits.
+# Pour Ned.starkii --> biais d'échantillonnage et très peu d'spp.
 
