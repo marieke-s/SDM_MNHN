@@ -1,6 +1,7 @@
 # Load libraries
 library(biomod2)
 library(ggplot2)
+
 ################################################################################
 # Species distribution modelling with biomod
 #
