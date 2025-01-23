@@ -183,7 +183,7 @@ for (i in 1:nrow(sp_list)) {
       # également (ce qui peut alors causer un mismatch dans notre analyse)
       cur_calib_lines <- cur_calib_lines[which(!is.na(cur_calib_lines))]
       
-      # Eventuellement print s'il y a des NA (using any()):
+      # Eventuellement print s'il y a des NA (using any()): (NA introduits dans les runs de background, cf. ppt et script 08.)
      # print(any(is.na(cur_calib_lines)))
       
       # Une fois que l'on sait quelles sont les lignes de calibration, on peut
